@@ -1,0 +1,19 @@
+actions:
+  8398a7/action-slack:
+    v3: 1750b5085f3ec60384090fb7c52965ef822e869e
+  actions/cache:
+    v3: 2f8e54208210a422b2efd51efaa6bd6d7ca8920f
+  actions/checkout:
+    v3: b4ffde3b8c7e7e3b6b7e3e1e3b6b7e3e1e3b6b7e
+  actions/download-artifact:
+    v3: a1b2c3d4e5f67890123456789abcdef012345678
+  actions/setup-node:
+    v3: c4c1b6b5e2e3b6b7e3e1e3b6b7e3e1e3b6b7e3e1
+  actions/upload-artifact:
+    v3: ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5
+  appleboy/ssh-action:
+    v1.2.2: b5e8e1e5e2e3e1e1e1e1e1e1e1e1e1e1e1e1e1e1
+  codecov/codecov-action:
+    v3.1.4: eaaf4bedf32dbdc6b720b63067d99c4d77d6047d
+  peaceiris/actions-gh-pages:
+    v4: e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3

@@ -1,0 +1,21 @@
+name: No Dependencies Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  no-deps-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run echo
+        run: echo "This workflow has no dependencies."
+      - name: Check version
+        run: fake-version-check --project .
+      - name: Lint code
+        run: fake-linter src/
+      - name: Run tests
+        run: fake-test-runner --all
+      - name: Build project
+        run: fake-builder --output dist/
