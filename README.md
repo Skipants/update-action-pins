@@ -54,7 +54,7 @@ go test
 ```
 
 ## Contributing
-Pull requests and issues are welcome! Please open an issue to discuss your idea or bug before submitting a PR.
+Pull requests and issues are welcome!
 
 ## License
 MIT License
