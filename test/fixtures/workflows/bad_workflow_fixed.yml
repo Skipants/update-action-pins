@@ -10,13 +10,13 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@b4ffde3b8c7e7e3b6b7e3e1e3b6b7e3e1e3b6b7e
+      - uses: actions/checkout@b4ffde3b8c7e7e3b6b7e3e1e3b6b7e3e1e3b6b7e # v3
       - name: Set up Node.js
-        uses: actions/setup-node@c4c1b6b5e2e3b6b7e3e1e3b6b7e3e1e3b6b7e3e1
+        uses: actions/setup-node@c4c1b6b5e2e3b6b7e3e1e3b6b7e3e1e3b6b7e3e1 # v3
         with:
           node-version: '18'
       - name: Cache dependencies
-        uses: actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f
+        uses: actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f # v3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -25,9 +25,9 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@b4ffde3b8c7e7e3b6b7e3e1e3b6b7e3e1e3b6b7e
+      - uses: actions/checkout@b4ffde3b8c7e7e3b6b7e3e1e3b6b7e3e1e3b6b7e # v3
       - name: Use Node.js
-        uses: actions/setup-node@c4c1b6b5e2e3b6b7e3e1e3b6b7e3e1e3b6b7e3e1
+        uses: actions/setup-node@c4c1b6b5e2e3b6b7e3e1e3b6b7e3e1e3b6b7e3e1 # v3
         with:
           node-version: '18'
       - run: npm ci
@@ -37,29 +37,29 @@ jobs:
     needs: [setup, lint]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@b4ffde3b8c7e7e3b6b7e3e1e3b6b7e3e1e3b6b7e
+      - uses: actions/checkout@b4ffde3b8c7e7e3b6b7e3e1e3b6b7e3e1e3b6b7e # v3
       - name: Use Node.js
-        uses: actions/setup-node@c4c1b6b5e2e3b6b7e3e1e3b6b7e3e1e3b6b7e3e1
+        uses: actions/setup-node@c4c1b6b5e2e3b6b7e3e1e3b6b7e3e1e3b6b7e3e1 # v3
         with:
           node-version: '18'
       - run: npm ci
       - run: npm test
       - name: Upload coverage
-        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d
+        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3.1.4
 
   build:
     needs: [test]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@b4ffde3b8c7e7e3b6b7e3e1e3b6b7e3e1e3b6b7e
+      - uses: actions/checkout@b4ffde3b8c7e7e3b6b7e3e1e3b6b7e3e1e3b6b7e # v3
       - name: Use Node.js
-        uses: actions/setup-node@c4c1b6b5e2e3b6b7e3e1e3b6b7e3e1e3b6b7e3e1
+        uses: actions/setup-node@c4c1b6b5e2e3b6b7e3e1e3b6b7e3e1e3b6b7e3e1 # v3
         with:
           node-version: '18'
       - run: npm ci
       - run: npm run build
       - name: Upload artifact
-        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
         with:
           name: build
           path: dist/
@@ -68,9 +68,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@b4ffde3b8c7e7e3b6b7e3e1e3b6b7e3e1e3b6b7e
+      - uses: actions/checkout@b4ffde3b8c7e7e3b6b7e3e1e3b6b7e3e1e3b6b7e # v3
       - name: Download artifact
-        uses: actions/download-artifact@a1b2c3d4e5f67890123456789abcdef012345678
+        uses: actions/download-artifact@a1b2c3d4e5f67890123456789abcdef012345678 # v3
         with:
           name: build
       - name: Deploy to production
@@ -84,7 +84,7 @@ jobs:
             tar -xzf build.tar.gz
             pm2 restart app
       - name: Notify Slack
-        uses: 8398a7/action-slack@1750b5085f3ec60384090fb7c52965ef822e869e
+        uses: 8398a7/action-slack@1750b5085f3ec60384090fb7c52965ef822e869e # v3
         with:
           status: ${{ job.status }}
           fields: repo,message,commit,author
