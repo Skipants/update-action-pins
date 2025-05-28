@@ -2,12 +2,16 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
+
+	"github.com/google/go-github/v72/github"
+	"github.com/gregjones/httpcache"
 )
 
 var helpFlags = []string{"--help", "-h"}
@@ -45,9 +49,33 @@ func main() {
 		files = append(files, fileOrDirPath)
 	}
 
+	githubClient := github.NewClient(httpcache.NewMemoryCacheTransport().Client()).WithAuthToken(os.Getenv("GITHUB_TOKEN"))
+
 	var shaFromActionVersion = func(action string, version string) (string, error) {
-		// todo replace this with github api stuff
-		return "", nil
+		parts := strings.Split(action, "/")
+		if len(parts) != 2 {
+			return "", fmt.Errorf("invalid action format: %s", action)
+		}
+		owner, repo := parts[0], parts[1]
+
+		ref, _, err := githubClient.Git.GetRef(context.Background(), owner, repo, "refs/heads/"+version)
+		if err == nil && ref.Object != nil {
+			return ref.Object.GetSHA(), nil
+		}
+
+		ref, _, err = githubClient.Git.GetRef(context.Background(), owner, repo, "refs/tags/"+version)
+		if err == nil && ref.Object != nil {
+			sha := ref.Object.GetSHA()
+			if ref.Object.GetType() == "tag" {
+				tagObj, _, tagErr := githubClient.Git.GetTag(context.Background(), owner, repo, sha)
+				if tagErr == nil && tagObj.Object != nil {
+					return tagObj.Object.GetSHA(), nil
+				}
+			}
+			return sha, nil
+		}
+
+		return "", fmt.Errorf("could not find branch or tag '%s' for %s/%s", version, owner, repo)
 	}
 
 	for _, file := range files {
@@ -79,11 +107,12 @@ func correctFile(filename string, shaFromActionVersion func(string, string) (str
 
 			if !shaRegex.MatchString(version) {
 				sha, err := shaFromActionVersion(action, version)
-				if err != nil {
-					return fmt.Errorf("couldn't get a sha for the line: %s: %w", strings.TrimSpace(currLine), err)
-				}
 
-				currLine = usesRegex.ReplaceAllString(currLine, fmt.Sprintf("uses: %s@%s", action, sha))
+				if err != nil {
+					fmt.Println("Warning:", fmt.Errorf("couldn't get a sha for the line: %s: %w", strings.TrimSpace(currLine), err))
+				} else {
+					currLine = usesRegex.ReplaceAllString(currLine, fmt.Sprintf("uses: %s@%s # %s", action, sha, version))
+				}
 			}
 		}
 		lines = append(lines, currLine)
