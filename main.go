@@ -15,7 +15,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var CURRENT_VERSION = "v0.0.1"
+var CURRENT_VERSION = "dev"
 
 func main() {
 	cmd := &cli.Command{
