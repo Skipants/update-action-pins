@@ -19,11 +19,13 @@ A command-line tool to automatically update GitHub Actions workflow files, repla
 update-action-pins <file-or-dir>
 ```
 
-- `<file-or-dir>`: Path to a workflow YAML file or a directory containing workflow files.
+- `<file-or-dir>`: Path to a workflow YAML file or a directory containing workflow files. Defaults to ".github/workflows"
 
 Example:
 ```sh
-update-action-pins .github/workflows
+update-action-pins
+
+update-action-pins .github/workflows/test.yml
 ```
 
 ## Requirements

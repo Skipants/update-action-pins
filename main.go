@@ -22,8 +22,14 @@ func main() {
 		return
 	}
 
-	fileOrDirPath := os.Args[1]
-	fileOrDirInfo, err := os.Stat(os.Args[1])
+	var fileOrDirPath string
+	if len(os.Args) > 1 {
+		fileOrDirPath = os.Args[1]
+	} else {
+		fileOrDirPath = ".github/workflows"
+	}
+
+	fileOrDirInfo, err := os.Stat(fileOrDirPath)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -86,6 +92,10 @@ func main() {
 }
 
 func correctFile(filename string, shaFromActionVersion func(string, string) (string, error)) error {
+	if !strings.HasSuffix(filename, ".yml") && !strings.HasSuffix(filename, ".yaml") {
+		return nil
+	}
+
 	file, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -95,6 +105,21 @@ func correctFile(filename string, shaFromActionVersion func(string, string) (str
 	var lines []string
 
 	scanner := bufio.NewScanner(file)
+	isWorkflow := false
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "on:") || strings.Contains(line, "jobs:") {
+			isWorkflow = true
+		}
+		lines = append(lines, line)
+	}
+	if !isWorkflow {
+		return nil
+	}
+
+	lines = nil
+	file.Seek(0, 0)
+	scanner = bufio.NewScanner(file)
 	usesRegex := regexp.MustCompile(`uses:\s*([^\s@]+)@([^\s]+)`)
 	shaRegex := regexp.MustCompile(`^[0-9a-fA-F]{40}$`)
 	for scanner.Scan() {
