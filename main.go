@@ -4,29 +4,49 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
-	"slices"
 	"strings"
 
 	"github.com/google/go-github/v72/github"
 	"github.com/gregjones/httpcache"
+	"github.com/urfave/cli/v3"
 )
 
-var helpFlags = []string{"--help", "-h"}
+var CURRENT_VERSION = "0.0.0"
 
 func main() {
-	if len(os.Args) < 2 || slices.Contains(helpFlags, os.Args[1]) {
-		fmt.Println("Usage: update-action-pins <file-or-dir>")
-		return
+	cmd := &cli.Command{
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			return updateActionPins(cmd.StringArg("fileOrDirPath"))
+		},
+		UsageText: `update-action-pins [global options] <file-or-directory-path>
+
+<file-or-directory-path> is the path to the github action files you would like to run this against. It defaults to ".github/workflows" if no argument is given.`,
+		Arguments: []cli.Argument{
+			&cli.StringArg{
+				Config: cli.StringConfig{
+					TrimSpace: true,
+				},
+				Name:  "fileOrDirPath",
+				Value: ".github/workflows",
+			},
+		},
+		Name:    "update-action-pins",
+		Version: CURRENT_VERSION,
 	}
 
-	fileOrDirPath := os.Args[1]
-	fileOrDirInfo, err := os.Stat(os.Args[1])
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func updateActionPins(fileOrDirPath string) error {
+	fileOrDirInfo, err := os.Stat(fileOrDirPath)
 	if err != nil {
-		fmt.Println("Error:", err)
-		return
+		return err
 	}
 
 	var files []string
@@ -42,8 +62,7 @@ func main() {
 			return nil
 		})
 		if err != nil {
-			fmt.Println("Error:", err)
-			return
+			return err
 		}
 	} else {
 		files = append(files, fileOrDirPath)
@@ -83,18 +102,39 @@ func main() {
 			fmt.Println("Error processing", file, ":", err)
 		}
 	}
+
+	return nil
 }
 
 func correctFile(filename string, shaFromActionVersion func(string, string) (string, error)) error {
+	if !strings.HasSuffix(filename, ".yml") && !strings.HasSuffix(filename, ".yaml") {
+		return nil
+	}
+
 	file, err := os.Open(filename)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	var lines []string
-
 	scanner := bufio.NewScanner(file)
+	isWorkflow := false
+	for scanner.Scan() {
+		line := scanner.Text()
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "on:") || strings.HasPrefix(trimmed, "jobs:") {
+			isWorkflow = true
+			break
+		}
+	}
+	if !isWorkflow {
+		return nil
+	}
+
+	file.Seek(0, 0)
+
+	var lines []string
+	scanner = bufio.NewScanner(file)
 	usesRegex := regexp.MustCompile(`uses:\s*([^\s@]+)@([^\s]+)`)
 	shaRegex := regexp.MustCompile(`^[0-9a-fA-F]{40}$`)
 	for scanner.Scan() {
