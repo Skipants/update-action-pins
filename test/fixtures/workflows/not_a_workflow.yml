@@ -1,0 +1,7 @@
+name: sample_project
+version: 1.0.0
+description: Fake YAML configuration file
+settings:
+  debug: true
+  retries: 3
+  timeout: 30

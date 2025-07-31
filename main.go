@@ -20,7 +20,13 @@ var CURRENT_VERSION = "0.0.0"
 func main() {
 	cmd := &cli.Command{
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			return updateActionPins(cmd.StringArg("fileOrDirPath"))
+			files, err := getWorkflowFileList(cmd.StringArg("fileOrDirPath"))
+
+			if err != nil {
+				return err
+			}
+
+			return updateActionPins(files)
 		},
 		UsageText: `update-action-pins [global options] <file-or-directory-path>
 
@@ -43,31 +49,7 @@ func main() {
 	}
 }
 
-func updateActionPins(fileOrDirPath string) error {
-	fileOrDirInfo, err := os.Stat(fileOrDirPath)
-	if err != nil {
-		return err
-	}
-
-	var files []string
-
-	if fileOrDirInfo.IsDir() {
-		err = filepath.Walk(fileOrDirPath, func(path string, fi os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if !fi.IsDir() {
-				files = append(files, path)
-			}
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-	} else {
-		files = append(files, fileOrDirPath)
-	}
-
+func updateActionPins(files []string) error {
 	githubClient := github.NewClient(httpcache.NewMemoryCacheTransport().Client()).WithAuthToken(os.Getenv("GITHUB_TOKEN"))
 
 	var shaFromActionVersion = func(action string, version string) (string, error) {
@@ -106,11 +88,54 @@ func updateActionPins(fileOrDirPath string) error {
 	return nil
 }
 
-func correctFile(filename string, shaFromActionVersion func(string, string) (string, error)) error {
-	if !strings.HasSuffix(filename, ".yml") && !strings.HasSuffix(filename, ".yaml") {
-		return nil
+func isValidWorkflowFile(filepath string) bool {
+	if !strings.HasSuffix(filepath, ".yml") && !strings.HasSuffix(filepath, ".yaml") {
+		return false
 	}
 
+	file, err := os.Open(filepath)
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	isValid := false
+	for scanner.Scan() {
+		line := scanner.Text()
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "on:") || strings.HasPrefix(trimmed, "jobs:") {
+			isValid = true
+			break
+		}
+	}
+
+	return isValid
+}
+
+func getWorkflowFileList(fileOrDirPath string) ([]string, error) {
+	var files = []string{}
+
+	fileOrDirInfo, err := os.Stat(fileOrDirPath)
+	if err != nil {
+		return []string{}, err
+	}
+
+	if fileOrDirInfo.IsDir() {
+		err = filepath.Walk(fileOrDirPath, func(path string, fi os.FileInfo, err error) error {
+			if err == nil && !fi.IsDir() && isValidWorkflowFile(path) {
+				files = append(files, path)
+			}
+			return err
+		})
+	} else if isValidWorkflowFile(fileOrDirPath) {
+		files = append(files, fileOrDirPath)
+	}
+
+	return files, err
+}
+
+func correctFile(filename string, shaFromActionVersion func(string, string) (string, error)) error {
 	file, err := os.Open(filename)
 	if err != nil {
 		return err

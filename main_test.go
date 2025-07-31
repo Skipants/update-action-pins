@@ -33,6 +33,34 @@ var mockedShaFromActionVersion = func(action string, version string) (string, er
 	return "", os.ErrNotExist
 }
 
+func TestGetWorkflowFileList(t *testing.T) {
+	expected := []string{
+		"test/fixtures/workflows/bad_workflow.yml",
+		"test/fixtures/workflows/good_workflow.yml",
+		"test/fixtures/workflows/bad_workflow_fixed.yml",
+		"test/fixtures/workflows/no_deps_workflow.yml",
+	}
+
+	files, err := getWorkflowFileList("test/fixtures")
+	if err != nil {
+		t.Errorf("Error running getWorkflowFileList: %s", err)
+	}
+
+	expectedMap := make(map[string]bool)
+	for _, f := range expected {
+		expectedMap[f] = true
+	}
+	for _, f := range files {
+		if !expectedMap[f] {
+			t.Errorf("unexpected file found: %s", f)
+		}
+		delete(expectedMap, f)
+	}
+	for f := range expectedMap {
+		t.Errorf("expected file missing: %s", f)
+	}
+}
+
 func TestCorrectFile(t *testing.T) {
 	tmpDir := "tmp"
 	err := copy.Copy("test/fixtures", tmpDir)
